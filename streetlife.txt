@@ -1,0 +1,213 @@
+-- Vérifie si le script est exécuté par un joueur
+local player = game:GetService("Players").LocalPlayer
+if not player then
+    warn("Ce script doit être exécuté par un joueur.")
+    return
+end
+
+-- Fonction pour rendre une frame déplaçable
+local function makeDraggable(frame, dragHandle)
+    local dragging = false
+    local dragInput, mousePos, framePos
+
+    dragHandle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            mousePos = input.Position
+            framePos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    dragHandle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement then
+            dragInput = input
+        end
+    end)
+
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - mousePos
+            frame.Position = UDim2.new(
+                framePos.X.Scale,
+                framePos.X.Offset + delta.X,
+                framePos.Y.Scale,
+                framePos.Y.Offset + delta.Y
+            )
+        end
+    end)
+end
+
+-- Crée un ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ScriptRivalsGui"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Crée une frame pour contenir les boutons
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 350)
+frame.Position = UDim2.new(0.5, -150, 0.5, -175)
+frame.BackgroundColor3 = Color3.fromRGB(54, 57, 63) -- Couleur de fond de Discord
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.2
+frame.Parent = screenGui
+
+-- Ajoute une image ronde pour les coins arrondis
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 12)
+uiCorner.Parent = frame
+
+-- Crée un titre
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+title.Text = "https://dsc.gg/ltes"
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.Parent = frame
+
+-- Rendre la fenêtre déplaçable par le titre
+makeDraggable(frame, title)
+
+-- Variables pour enregistrer les points de départ et de fin
+local startPoint = nil
+local endPoint = nil
+
+-- Fonction pour définir le point de départ
+local function setStartPoint()
+    if player.Character and player.Character.PrimaryPart then
+        startPoint = player.Character.PrimaryPart.Position
+        print("Point de départ défini : " .. tostring(startPoint))
+    end
+end
+
+-- Fonction pour définir le point de fin
+local function setEndPoint()
+    if player.Character and player.Character.PrimaryPart then
+        endPoint = player.Character.PrimaryPart.Position
+        print("Point de fin défini : " .. tostring(endPoint))
+    end
+end
+
+-- Fonction pour simuler une pression de la touche "E"
+local function pressKeyE(duration)
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+    wait(duration)
+    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+end
+
+-- Fonction pour vérifier si le joueur est au point spécifié
+local function isAtPosition(position, tolerance)
+    if player.Character and player.Character.PrimaryPart then
+        return (player.Character.PrimaryPart.Position - position).magnitude < tolerance
+    end
+    return false
+end
+
+-- Fonction pour téléporter le joueur entre les points de départ et de fin
+local teleporting = false
+local function startTeleporting()
+    if startPoint and endPoint then
+        teleporting = true
+        while teleporting do
+            if player.Character and player.Character.PrimaryPart then
+                player.Character:SetPrimaryPartCFrame(CFrame.new(startPoint))
+                wait(0.5) -- Délai pour s'assurer que le joueur est bien téléporté
+
+                -- Attendre que le joueur soit au point de départ avant d'appuyer sur E
+                while not isAtPosition(startPoint, 5) do
+                    wait(0.1)
+                end
+
+                pressKeyE(3) -- Appuie sur E pendant 3 secondes au point de départ
+                wait(2) -- Délai pour s'assurer que l'action est complétée
+
+                player.Character:SetPrimaryPartCFrame(CFrame.new(endPoint))
+                wait(0.5) -- Délai pour s'assurer que le joueur est bien téléporté
+
+                -- Attendre que le joueur soit au point de fin avant d'appuyer sur E
+                while not isAtPosition(endPoint, 5) do
+                    wait(0.1)
+                end
+
+                pressKeyE(3) -- Appuie sur E pendant 3 secondes au point de fin
+                wait(2) -- Délai pour s'assurer que l'action est complétée
+            else
+                teleporting = false
+            end
+        end
+    else
+        warn("Veuillez définir les points de départ et de fin.")
+    end
+end
+
+-- Fonction pour arrêter la téléportation
+local function stopTeleporting()
+    teleporting = false
+end
+
+-- Crée le bouton Set Start Point
+local buttonSetStart = Instance.new("TextButton")
+buttonSetStart.Size = UDim2.new(0, 200, 0, 50)
+buttonSetStart.Position = UDim2.new(0.5, -100, 0.3, -25)
+buttonSetStart.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
+buttonSetStart.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonSetStart.Font = Enum.Font.SourceSans
+buttonSetStart.TextSize = 24
+buttonSetStart.Text = "Set Start Point"
+buttonSetStart.Parent = frame
+
+-- Ajoute des coins arrondis au bouton Set Start Point
+local buttonSetStartCorner = Instance.new("UICorner")
+buttonSetStartCorner.CornerRadius = UDim.new(0, 12)
+buttonSetStartCorner.Parent = buttonSetStart
+
+-- Crée le bouton Set End Point
+local buttonSetEnd = Instance.new("TextButton")
+buttonSetEnd.Size = UDim2.new(0, 200, 0, 50)
+buttonSetEnd.Position = UDim2.new(0.5, -100, 0.5, -25)
+buttonSetEnd.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
+buttonSetEnd.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonSetEnd.Font = Enum.Font.SourceSans
+buttonSetEnd.TextSize = 24
+buttonSetEnd.Text = "Set End Point"
+buttonSetEnd.Parent = frame
+
+-- Ajoute des coins arrondis au bouton Set End Point
+local buttonSetEndCorner = Instance.new("UICorner")
+buttonSetEndCorner.CornerRadius = UDim.new(0, 12)
+buttonSetEndCorner.Parent = buttonSetEnd
+
+-- Crée le bouton Start Teleporting
+local buttonTeleport = Instance.new("TextButton")
+buttonTeleport.Size = UDim2.new(0, 200, 0, 50)
+buttonTeleport.Position = UDim2.new(0.5, -100, 0.7, -25)
+buttonTeleport.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
+buttonTeleport.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonTeleport.Font = Enum.Font.SourceSans
+buttonTeleport.TextSize = 24
+buttonTeleport.Text = "Start Teleporting"
+buttonTeleport.Parent = frame
+
+-- Ajoute des coins arrondis au bouton Start Teleporting
+local buttonTeleportCorner = Instance.new("UICorner")
+buttonTeleportCorner.CornerRadius = UDim.new(0, 12)
+buttonTeleportCorner.Parent = buttonTeleport
+
+-- Crée le bouton Stop Teleporting
+local buttonStopTeleport = Instance.new("TextButton")
+buttonStopTeleport.Size = UDim2.new(0, 200, 0, 50)
+buttonStopTeleport.Position = UDim2.new(0.5, -100, 0.9, -25)
+buttonStopTeleport.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
+buttonStopTeleport.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonStopTeleport.Font = Enum.Font.SourceSans
+buttonStopTeleport.TextSize = 24
+buttonStopTeleport.Text = "Stop Teleporting"
