@@ -104,14 +104,6 @@ local function pressKeyE(duration)
     VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
 end
 
--- Fonction pour vérifier si le joueur est au point spécifié
-local function isAtPosition(position, tolerance)
-    if player.Character and player.Character.PrimaryPart then
-        return (player.Character.PrimaryPart.Position - position).magnitude < tolerance
-    end
-    return false
-end
-
 -- Fonction pour téléporter le joueur entre les points de départ et de fin
 local teleporting = false
 local function startTeleporting()
@@ -120,26 +112,13 @@ local function startTeleporting()
         while teleporting do
             if player.Character and player.Character.PrimaryPart then
                 player.Character:SetPrimaryPartCFrame(CFrame.new(startPoint))
-                wait(0.5) -- Délai pour s'assurer que le joueur est bien téléporté
-
-                -- Attendre que le joueur soit au point de départ avant d'appuyer sur E
-                while not isAtPosition(startPoint, 5) do
-                    wait(0.1)
-                end
-
+                wait(0.5) -- Augmentation du délai pour s'assurer que le joueur est bien téléporté
                 pressKeyE(3) -- Appuie sur E pendant 3 secondes au point de départ
-                wait(2) -- Délai pour s'assurer que l'action est complétée
-
+                wait(2) -- Augmentation du délai avant de téléporter au point de fin
                 player.Character:SetPrimaryPartCFrame(CFrame.new(endPoint))
-                wait(0.5) -- Délai pour s'assurer que le joueur est bien téléporté
-
-                -- Attendre que le joueur soit au point de fin avant d'appuyer sur E
-                while not isAtPosition(endPoint, 5) do
-                    wait(0.1)
-                end
-
+                wait(0.5) -- Augmentation du délai pour s'assurer que le joueur est bien téléporté
                 pressKeyE(3) -- Appuie sur E pendant 3 secondes au point de fin
-                wait(2) -- Délai pour s'assurer que l'action est complétée
+                wait(2) -- Augmentation du délai avant de téléporter au point de départ
             else
                 teleporting = false
             end
@@ -211,3 +190,23 @@ buttonStopTeleport.TextColor3 = Color3.fromRGB(255, 255, 255)
 buttonStopTeleport.Font = Enum.Font.SourceSans
 buttonStopTeleport.TextSize = 24
 buttonStopTeleport.Text = "Stop Teleporting"
+buttonStopTeleport.Parent = frame
+
+-- Ajoute des coins arrondis au bouton Stop Teleporting
+local buttonStopTeleportCorner = Instance.new("UICorner")
+buttonStopTeleportCorner.CornerRadius = UDim.new(0, 12)
+buttonStopTeleportCorner.Parent = buttonStopTeleport
+
+-- Connexion des boutons aux fonctions correspondantes
+buttonSetStart.MouseButton1Click:Connect(setStartPoint)
+buttonSetEnd.MouseButton1Click:Connect(setEndPoint)
+buttonTeleport.MouseButton1Click:Connect(function()
+    if not teleporting then
+        startTeleporting()
+        buttonTeleport.Text = "Teleporting..."
+    end
+end)
+buttonStopTeleport.MouseButton1Click:Connect(function()
+    stopTeleporting()
+    buttonTeleport.Text = "Start Teleporting"
+end)
