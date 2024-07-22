@@ -1,212 +1,305 @@
--- Vérifie si le script est exécuté par un joueur
 local player = game:GetService("Players").LocalPlayer
-if not player then
-    warn("Ce script doit être exécuté par un joueur.")
-    return
-end
-
--- Fonction pour rendre une frame déplaçable
-local function makeDraggable(frame, dragHandle)
-    local dragging = false
-    local dragInput, mousePos, framePos
-
-    dragHandle.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            mousePos = input.Position
-            framePos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    dragHandle.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - mousePos
-            frame.Position = UDim2.new(
-                framePos.X.Scale,
-                framePos.X.Offset + delta.X,
-                framePos.Y.Scale,
-                framePos.Y.Offset + delta.Y
-            )
-        end
-    end)
-end
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
 
 -- Crée un ScreenGui
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "ScriptRivalsGui"
+screenGui.Name = "ActionRecorderGui"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Crée une frame pour contenir les boutons
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 300, 0, 350)
-frame.Position = UDim2.new(0.5, -150, 0.5, -175)
-frame.BackgroundColor3 = Color3.fromRGB(54, 57, 63) -- Couleur de fond de Discord
-frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.2
-frame.Parent = screenGui
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 300, 0, 400)
+mainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
+mainFrame.BackgroundColor3 = Color3.fromRGB(54, 57, 63)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
 
--- Ajoute une image ronde pour les coins arrondis
-local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 12)
-uiCorner.Parent = frame
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local dragging = false
+local dragInput, mousePos, framePos
 
--- Crée un titre
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Position = UDim2.new(0, 0, 0, 0)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
-title.Text = "https://dsc.gg/ltes"
-title.TextXAlignment = Enum.TextXAlignment.Center
-title.Parent = frame
-
--- Rendre la fenêtre déplaçable par le titre
-makeDraggable(frame, title)
-
--- Variables pour enregistrer les points de départ et de fin
-local startPoint = nil
-local endPoint = nil
-
--- Fonction pour définir le point de départ
-local function setStartPoint()
-    if player.Character and player.Character.PrimaryPart then
-        startPoint = player.Character.PrimaryPart.Position
-        print("Point de départ défini : " .. tostring(startPoint))
-    end
-end
-
--- Fonction pour définir le point de fin
-local function setEndPoint()
-    if player.Character and player.Character.PrimaryPart then
-        endPoint = player.Character.PrimaryPart.Position
-        print("Point de fin défini : " .. tostring(endPoint))
-    end
-end
-
--- Fonction pour simuler une pression de la touche "E"
-local function pressKeyE(duration)
-    local VirtualInputManager = game:GetService("VirtualInputManager")
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-    wait(duration)
-    VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-end
-
--- Fonction pour téléporter le joueur entre les points de départ et de fin
-local teleporting = false
-local function startTeleporting()
-    if startPoint and endPoint then
-        teleporting = true
-        while teleporting do
-            if player.Character and player.Character.PrimaryPart then
-                player.Character:SetPrimaryPartCFrame(CFrame.new(startPoint))
-                wait(0.5) -- Augmentation du délai pour s'assurer que le joueur est bien téléporté
-                pressKeyE(3) -- Appuie sur E pendant 3 secondes au point de départ
-                wait(2) -- Augmentation du délai avant de téléporter au point de fin
-                player.Character:SetPrimaryPartCFrame(CFrame.new(endPoint))
-                wait(0.5) -- Augmentation du délai pour s'assurer que le joueur est bien téléporté
-                pressKeyE(3) -- Appuie sur E pendant 3 secondes au point de fin
-                wait(2) -- Augmentation du délai avant de téléporter au point de départ
-            else
-                teleporting = false
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        mousePos = input.Position
+        framePos = mainFrame.Position
+        
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
             end
-        end
-    else
-        warn("Veuillez définir les points de départ et de fin.")
-    end
-end
-
--- Fonction pour arrêter la téléportation
-local function stopTeleporting()
-    teleporting = false
-end
-
--- Crée le bouton Set Start Point
-local buttonSetStart = Instance.new("TextButton")
-buttonSetStart.Size = UDim2.new(0, 200, 0, 50)
-buttonSetStart.Position = UDim2.new(0.5, -100, 0.3, -25)
-buttonSetStart.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
-buttonSetStart.TextColor3 = Color3.fromRGB(255, 255, 255)
-buttonSetStart.Font = Enum.Font.SourceSans
-buttonSetStart.TextSize = 24
-buttonSetStart.Text = "Set Start Point"
-buttonSetStart.Parent = frame
-
--- Ajoute des coins arrondis au bouton Set Start Point
-local buttonSetStartCorner = Instance.new("UICorner")
-buttonSetStartCorner.CornerRadius = UDim.new(0, 12)
-buttonSetStartCorner.Parent = buttonSetStart
-
--- Crée le bouton Set End Point
-local buttonSetEnd = Instance.new("TextButton")
-buttonSetEnd.Size = UDim2.new(0, 200, 0, 50)
-buttonSetEnd.Position = UDim2.new(0.5, -100, 0.5, -25)
-buttonSetEnd.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
-buttonSetEnd.TextColor3 = Color3.fromRGB(255, 255, 255)
-buttonSetEnd.Font = Enum.Font.SourceSans
-buttonSetEnd.TextSize = 24
-buttonSetEnd.Text = "Set End Point"
-buttonSetEnd.Parent = frame
-
--- Ajoute des coins arrondis au bouton Set End Point
-local buttonSetEndCorner = Instance.new("UICorner")
-buttonSetEndCorner.CornerRadius = UDim.new(0, 12)
-buttonSetEndCorner.Parent = buttonSetEnd
-
--- Crée le bouton Start Teleporting
-local buttonTeleport = Instance.new("TextButton")
-buttonTeleport.Size = UDim2.new(0, 200, 0, 50)
-buttonTeleport.Position = UDim2.new(0.5, -100, 0.7, -25)
-buttonTeleport.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
-buttonTeleport.TextColor3 = Color3.fromRGB(255, 255, 255)
-buttonTeleport.Font = Enum.Font.SourceSans
-buttonTeleport.TextSize = 24
-buttonTeleport.Text = "Start Teleporting"
-buttonTeleport.Parent = frame
-
--- Ajoute des coins arrondis au bouton Start Teleporting
-local buttonTeleportCorner = Instance.new("UICorner")
-buttonTeleportCorner.CornerRadius = UDim.new(0, 12)
-buttonTeleportCorner.Parent = buttonTeleport
-
--- Crée le bouton Stop Teleporting
-local buttonStopTeleport = Instance.new("TextButton")
-buttonStopTeleport.Size = UDim2.new(0, 200, 0, 50)
-buttonStopTeleport.Position = UDim2.new(0.5, -100, 0.9, -25)
-buttonStopTeleport.BackgroundColor3 = Color3.fromRGB(88, 101, 242) -- Couleur bouton Discord
-buttonStopTeleport.TextColor3 = Color3.fromRGB(255, 255, 255)
-buttonStopTeleport.Font = Enum.Font.SourceSans
-buttonStopTeleport.TextSize = 24
-buttonStopTeleport.Text = "Stop Teleporting"
-buttonStopTeleport.Parent = frame
-
--- Ajoute des coins arrondis au bouton Stop Teleporting
-local buttonStopTeleportCorner = Instance.new("UICorner")
-buttonStopTeleportCorner.CornerRadius = UDim.new(0, 12)
-buttonStopTeleportCorner.Parent = buttonStopTeleport
-
--- Connexion des boutons aux fonctions correspondantes
-buttonSetStart.MouseButton1Click:Connect(setStartPoint)
-buttonSetEnd.MouseButton1Click:Connect(setEndPoint)
-buttonTeleport.MouseButton1Click:Connect(function()
-    if not teleporting then
-        startTeleporting()
-        buttonTeleport.Text = "Teleporting..."
+        end)
     end
 end)
-buttonStopTeleport.MouseButton1Click:Connect(function()
-    stopTeleporting()
-    buttonTeleport.Text = "Start Teleporting"
+
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        local delta = input.Position - mousePos
+        mainFrame.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+    end
+end)
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local tabFrame = Instance.new("Frame")
+tabFrame.Size = UDim2.new(0, 100, 1, 0)
+tabFrame.Position = UDim2.new(0, 0, 0, 0)
+tabFrame.BackgroundColor3 = Color3.fromRGB(47, 49, 54)
+tabFrame.BorderSizePixel = 0
+tabFrame.Parent = mainFrame
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, -100, 1, 0)
+contentFrame.Position = UDim2.new(0, 100, 0, 0)
+contentFrame.BackgroundColor3 = Color3.fromRGB(54, 57, 63)
+contentFrame.BorderSizePixel = 0
+contentFrame.Parent = mainFrame
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local function createTabButton(name, position)
+    local button = Instance.new("TextButton")
+    button.Size = UDim2.new(1, 0, 0, 50)
+    button.Position = UDim2.new(0, 0, 0, position)
+    button.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.Font = Enum.Font.SourceSans
+    button.TextSize = 24
+    button.Text = name
+    button.Parent = tabFrame
+    
+    -- Ajoute des coins arrondis aux boutons d'onglets
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 10)
+    corner.Parent = button
+    
+    return button
+end
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local playerTabButton = createTabButton("Player", 0)
+local recordTabButton = createTabButton("Record", 50)
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local playerTab = Instance.new("Frame")
+playerTab.Size = UDim2.new(1, 0, 1, 0)
+playerTab.Position = UDim2.new(0, 0, 0, 0)
+playerTab.BackgroundTransparency = 1
+playerTab.Visible = true
+playerTab.Parent = contentFrame
+
+local recordTab = Instance.new("Frame")
+recordTab.Size = UDim2.new(1, 0, 1, 0)
+recordTab.Position = UDim2.new(0, 0, 0, 0)
+recordTab.BackgroundTransparency = 1
+recordTab.Visible = false
+recordTab.Parent = contentFrame
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local function switchTab(tab)
+    playerTab.Visible = false
+    recordTab.Visible = false
+    tab.Visible = true
+end
+
+playerTabButton.MouseButton1Click:Connect(function() switchTab(playerTab) end)
+recordTabButton.MouseButton1Click:Connect(function() switchTab(recordTab) end)
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local playerTitle = Instance.new("TextLabel")
+playerTitle.Size = UDim2.new(1, 0, 0, 30)
+playerTitle.Position = UDim2.new(0, 0, 0, 0)
+playerTitle.BackgroundTransparency = 1
+playerTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+playerTitle.Font = Enum.Font.SourceSansBold
+playerTitle.TextSize = 20
+playerTitle.Text = "Player Controls"
+playerTitle.TextXAlignment = Enum.TextXAlignment.Center
+playerTitle.Parent = playerTab
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local function executeExternalScript()
+    loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+end
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonFly = Instance.new("TextButton")
+buttonFly.Size = UDim2.new(0, 200, 0, 50)
+buttonFly.Position = UDim2.new(0.5, -100, 0.1, -25)
+buttonFly.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+buttonFly.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonFly.Font = Enum.Font.SourceSans
+buttonFly.TextSize = 24
+buttonFly.Text = "Execute Script"
+buttonFly.Parent = playerTab
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonFlyCorner = Instance.new("UICorner")
+buttonFlyCorner.CornerRadius = UDim.new(0, 12)
+buttonFlyCorner.Parent = buttonFly
+
+buttonFly.MouseButton1Click:Connect(executeExternalScript)
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local recordTitle = Instance.new("TextLabel")
+recordTitle.Size = UDim2.new(1, 0, 0, 30)
+recordTitle.Position = UDim2.new(0, 0, 0, 0)
+recordTitle.BackgroundTransparency = 1
+recordTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+recordTitle.Font = Enum.Font.SourceSansBold
+recordTitle.TextSize = 20
+recordTitle.Text = "BY SWALEYRT https://discord.gg/atbk7jvtdm"
+recordTitle.TextXAlignment = Enum.TextXAlignment.Center
+recordTitle.Parent = recordTab
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStartRecording = Instance.new("TextButton")
+buttonStartRecording.Size = UDim2.new(0, 200, 0, 50)
+buttonStartRecording.Position = UDim2.new(0.5, -100, 0.15, -25)
+buttonStartRecording.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+buttonStartRecording.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonStartRecording.Font = Enum.Font.SourceSans
+buttonStartRecording.TextSize = 24
+buttonStartRecording.Text = "Start Recording"
+buttonStartRecording.Parent = recordTab
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStartRecordingCorner = Instance.new("UICorner")
+buttonStartRecordingCorner.CornerRadius = UDim.new(0, 12)
+buttonStartRecordingCorner.Parent = buttonStartRecording
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStopRecording = Instance.new("TextButton")
+buttonStopRecording.Size = UDim2.new(0, 200, 0, 50)
+buttonStopRecording.Position = UDim2.new(0.5, -100, 0.3, -25)
+buttonStopRecording.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+buttonStopRecording.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonStopRecording.Font = Enum.Font.SourceSans
+buttonStopRecording.TextSize = 24
+buttonStopRecording.Text = "Stop Recording"
+buttonStopRecording.Parent = recordTab
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStopRecordingCorner = Instance.new("UICorner")
+buttonStopRecordingCorner.CornerRadius = UDim.new(0, 12)
+buttonStopRecordingCorner.Parent = buttonStopRecording
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStartReplay = Instance.new("TextButton")
+buttonStartReplay.Size = UDim2.new(0, 200, 0, 50)
+buttonStartReplay.Position = UDim2.new(0.5, -100, 0.45, -25)
+buttonStartReplay.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+buttonStartReplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonStartReplay.Font = Enum.Font.SourceSans
+buttonStartReplay.TextSize = 24
+buttonStartReplay.Text = "Start Replay"
+buttonStartReplay.Parent = recordTab
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStartReplayCorner = Instance.new("UICorner")
+buttonStartReplayCorner.CornerRadius = UDim.new(0, 12)
+buttonStartReplayCorner.Parent = buttonStartReplay
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStopReplay = Instance.new("TextButton")
+buttonStopReplay.Size = UDim2.new(0, 200, 0, 50)
+buttonStopReplay.Position = UDim2.new(0.5, -100, 0.6, -25)
+buttonStopReplay.BackgroundColor3 = Color3.fromRGB(88, 101, 242)
+buttonStopReplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+buttonStopReplay.Font = Enum.Font.SourceSans
+buttonStopReplay.TextSize = 24
+buttonStopReplay.Text = "Stop Replay"
+buttonStopReplay.Parent = recordTab
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local buttonStopReplayCorner = Instance.new("UICorner")
+buttonStopReplayCorner.CornerRadius = UDim.new(0, 12)
+buttonStopReplayCorner.Parent = buttonStopReplay
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local recording = false
+local actions = {}
+local replaying = false
+local replayIndex = 1
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local function recordAction(actionType, data)
+    table.insert(actions, {actionType = actionType, data = data, time = tick()})
+end
+
+-- BY SWALEYRT https://discord.gg/atbk7jvtdm
+local function startRecording()
+    recording = true
+    actions = {} -- Réinitialise les actions
+    print("Enregistrement démarré")
+end
+
+
+local function stopRecording()
+    recording = false
+    print("Enregistrement arrêté")
+end
+
+
+local function stopReplay()
+    replaying = false
+end
+
+
+local function replayActions()
+    replaying = true
+    local startTime = tick()
+    while replaying do
+        local currentTime = tick()
+        local action = actions[replayIndex]
+        if action then
+            local delay = (action.time - startTime) / 2 -- Réduit le délai pour accélérer le replay
+            if currentTime - startTime >= delay then
+                if action.actionType == "Move" and player.Character and player.Character.PrimaryPart then
+                    player.Character:SetPrimaryPartCFrame(action.data)
+                elseif action.actionType == "KeyPress" then
+                    local VirtualInputManager = game:GetService("VirtualInputManager")
+                    VirtualInputManager:SendKeyEvent(true, action.data.KeyCode, false, game)
+                    wait(action.data.Duration)
+                    VirtualInputManager:SendKeyEvent(false, action.data.KeyCode, false, game)
+                end
+                replayIndex = replayIndex + 1
+                if replayIndex > #actions then
+                    replayIndex = 1
+                    startTime = tick()
+                end
+            end
+        end
+        RunService.Heartbeat:Wait()
+    end
+end
+
+
+buttonStartRecording.MouseButton1Click:Connect(startRecording)
+buttonStopRecording.MouseButton1Click:Connect(stopRecording)
+buttonStartReplay.MouseButton1Click:Connect(function()
+    if not replaying then
+        replayActions() -- Lance la relecture automatiquement lorsque le bouton est cliqué
+    end
+end)
+buttonStopReplay.MouseButton1Click:Connect(stopReplay)
+
+
+RunService.Stepped:Connect(function()
+    if recording and player.Character and player.Character.PrimaryPart then
+        recordAction("Move", player.Character.PrimaryPart.CFrame)
+    end
+end)
+
+
+UserInputService.InputBegan:Connect(function(input)
+    if recording and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.E then
+        recordAction("KeyPress", {KeyCode = input.KeyCode, Duration = 4}) -- Enregistre avec une durée de 4 secondes
+    end
 end)
